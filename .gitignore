@@ -27,3 +27,4 @@ vercel
 .idea
 *.swp
 *.swo
+.vercel
