@@ -1,87 +1,158 @@
 import React, { useState } from 'react'
-import './App.css'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Layout } from './components/Layout'
+import { FileUpload } from './components/FileUpload'
+import { TourPreview } from './components/TourPreview'
+import { Purchase } from './components/Purchase'
 
 function App() {
-  const [step, setStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [tourUrl, setTourUrl] = useState(null)
+  const [error, setError] = useState(null)
+
+  // Handle file upload
+  const handleFileSelect = (file) => {
+    if (file) {
+      setSelectedFile(file)
+      setError(null)
+    }
+  }
+
+  // Handle tour generation
+  const handleGenerateTour = async () => {
+    if (!selectedFile) {
+      setError('Please select a floor plan first')
+      return
+    }
+
+    setIsGenerating(true)
+    setError(null)
+
+    // Simulate AI processing
+    await new Promise(resolve => setTimeout(resolve, 3000))
+
+    // Generate tour URL
+    const generatedUrl = `https://tourgen.app/tour/${Date.now()}`
+    setTourUrl(generatedUrl)
+    setIsGenerating(false)
+    setCurrentStep(3)
+  }
+
+  // Handle purchase
+  const handlePurchase = () => {
+    // Simulate payment processing
+    alert('Redirecting to secure checkout...')
+    // In production, this would open Stripe checkout
+    window.open('https://buy.stripe.com/test_123', '_blank')
+  }
+
+  // Reset and start over
+  const handleReset = () => {
+    setCurrentStep(1)
+    setSelectedFile(null)
+    setTourUrl(null)
+    setError(null)
+  }
 
   return (
-    <div className="App">
-      <header className="header">
-        <div className="container">
-          <h1>🏠 Real Estate Tour Generator</h1>
-          <p>Create immersive 3D virtual tours in minutes</p>
-        </div>
-      </header>
+    <Layout currentStep={currentStep}>
+      <AnimatePresence mode="wait">
+        {currentStep === 1 && (
+          <motion.div
+            key="step1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <FileUpload
+              onFileSelect={handleFileSelect}
+              selectedFile={selectedFile}
+              error={error}
+            />
 
-      <main className="container">
-        <div className="step-card">
-          {step === 1 && (
-            <>
-              <h2>Step 1: Upload Floor Plan</h2>
-              <p>Upload your floor plan image to generate a 3D virtual tour.</p>
-              <button className="btn-primary" onClick={() => setStep(2)}>
-                Upload Floor Plan
-              </button>
-            </>
-          )}
+            <div className="mt-8 text-center">
+              {selectedFile && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentStep(2)}
+                  className="btn-primary"
+                >
+                  Continue to 3D Generation
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+        )}
 
-          {step === 2 && (
-            <>
-              <h2>Step 2: Generate Tour</h2>
-              <p>Your 3D virtual tour is being generated...</p>
-              <div className="tour-placeholder">
-                <h3>🏠 3D Virtual Tour</h3>
-                <p>Your 3D tour will appear here</p>
-                <div className="tour-demo">
-                  <div className="room-demo">
-                    <div className="floor"></div>
-                    <div className="wall wall-1"></div>
-                    <div className="wall wall-2"></div>
-                    <div className="furniture bed"></div>
-                    <div className="furniture sofa"></div>
-                    <div className="furniture table"></div>
-                  </div>
-                </div>
-              </div>
-              <button className="btn-primary" onClick={() => setStep(3)}>
-                Continue to Payment
-              </button>
-            </>
-          )}
+        {currentStep === 2 && (
+          <motion.div
+            key="step2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <TourPreview
+              file={selectedFile}
+              isGenerating={isGenerating}
+              tourData={tourUrl}
+            />
 
-          {step === 3 && (
-            <>
-              <h2>🎉 Virtual Tour Ready!</h2>
-              <p>Your 3D virtual tour has been successfully created.</p>
-              <div className="tour-placeholder">
-                <h3>🏠 3D Virtual Tour</h3>
-                <p>Share this link with potential buyers</p>
-                <div className="tour-demo">
-                  <div className="room-demo">
-                    <div className="floor"></div>
-                    <div className="wall wall-1"></div>
-                    <div className="wall wall-2"></div>
-                    <div className="furniture bed"></div>
-                    <div className="furniture sofa"></div>
-                    <div className="furniture table"></div>
-                  </div>
-                </div>
-              </div>
-              <button className="btn-primary" onClick={() => alert('Payment processing - $19')}>
-                💳 Pay $19 for Full Access
-              </button>
-              <p className="small-text">Instant delivery • 30-day money-back guarantee</p>
-            </>
-          )}
-        </div>
-      </main>
+            <div className="mt-8 flex justify-center space-x-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleReset}
+                className="btn-secondary"
+              >
+                Start Over
+              </motion.button>
 
-      <footer className="footer">
-        <div className="container">
-          <p>© 2024 Real Estate Tour Generator. Made for real estate agents.</p>
-        </div>
-      </footer>
-    </div>
+              {!isGenerating && !tourUrl && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleGenerateTour}
+                  className="btn-primary"
+                >
+                  Generate 3D Tour
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {currentStep === 3 && (
+          <motion.div
+            key="step3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Purchase
+              tourUrl={tourUrl}
+              onPurchase={handlePurchase}
+            />
+
+            <div className="mt-8 text-center">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleReset}
+                className="btn-secondary"
+              >
+                Create Another Tour
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Layout>
   )
 }
 
