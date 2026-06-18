@@ -9,4 +9,7 @@ export default defineConfig({
     sourcemap: false,
   },
   server: { host: true, port: 5173 },
+  define: {
+    'process.env': {}
+  }
 })
