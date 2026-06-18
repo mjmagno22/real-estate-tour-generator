@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - Real Estate Tour Generator</title>
+    <style>
+        body {
+            font-family: Inter, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .payment-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .price {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ffd700;
+            margin: 2rem 0;
+        }
+        .features {
+            text-align: left;
+            margin: 2rem 0;
+        }
+        .features li {
+            margin: 0.5rem 0;
+            list-style: none;
+            display: flex;
+            align-items: center;
+        }
+        .features li::before {
+            content: "✅";
+            margin-right: 0.5rem;
+        }
+        .payment-methods {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .payment-method {
+            font-size: 3rem;
+        }
+        .btn-pay {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-pay:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <h1>🏠 Real Estate Tour Generator</h1>
+        <div class="price">$19</div>
+
+        <div class="features">
+            <ul>
+                <li>Create unlimited 3D virtual tours</li>
+                <li>Upload custom floor plans</li>
+                <li>Add furniture & decorations</li>
+                <li>Share tour links instantly</li>
+                <li>30-day money-back guarantee</li>
+            </ul>
+        </div>
+
+        <div class="payment-methods">
+            <div class="payment-method">💳</div>
+            <div class="payment-method">🏦</div>
+            <div class="payment-method">📱</div>
+        </div>
+
+        <button class="btn-pay" onclick="processPayment()">
+            Pay $19 Now →
+        </button>
+
+        <p style="margin-top: 1rem; opacity: 0.8;">
+            Secure payment powered by Stripe
+        </p>
+    </div>
+
+    <script>
+        function processPayment() {
+            // For demo purposes - in production this would open Stripe checkout
+            alert('Opening Stripe checkout...\n\nDemo: This would collect payment info and process $19 charge.');
+            // Real implementation would be:
+            // StripeCheckout.redirectToCheckout({
+            //   mode: 'payment',
+            //   lineItems: [{price: 'price_1...', quantity: 1}],
+            //   successUrl: window.location.href + '?success=true',
+            //   cancelUrl: window.location.href + '?cancel=true',
+            // });
+        }
+    </script>
+</body>
+</html>

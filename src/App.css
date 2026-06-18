@@ -115,6 +115,12 @@
   box-shadow: 0 15px 30px rgba(238, 90, 36, 0.4);
 }
 
+.small-text {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 1rem;
+}
+
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;

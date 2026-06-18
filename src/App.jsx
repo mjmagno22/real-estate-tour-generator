@@ -106,9 +106,11 @@ function App() {
   }
 
   const handlePurchase = () => {
-    // This would integrate with Stripe
-    alert('Payment processing - $19 per tour')
+    // Simple payment integration - leads to payment page
+    alert('Redirecting to payment - $19 per tour')
+    // In production, this would open Stripe payment form
     setTourUrl(`https://realestate-tour-generator.vercel.app/tour/${Date.now()}`)
+    window.open('https://realestate-tour-generator.vercel.app/payment', '_blank')
   }
 
   return (
@@ -172,6 +174,7 @@ function App() {
             <button onClick={handlePurchase} className="btn-primary">
               Get Full Access - $19
             </button>
+            <p className="small-text">Instant delivery • 30-day money-back guarantee</p>
           </div>
         )}
       </main>
