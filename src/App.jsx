@@ -1,82 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react'
-import * as THREE from 'three'
+import React, { useState } from 'react'
 import './App.css'
 
 function VirtualTour3D({ containerRef }) {
-  useEffect(() => {
-    if (!containerRef.current) return
-
-    const container = containerRef.current
-    const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000)
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-
-    // Setup renderer
-    renderer.setSize(container.clientWidth, container.clientHeight)
-    renderer.setClearColor(0xf0f0f0, 1)
-    container.appendChild(renderer.domElement)
-
-    // Lighting
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6)
-    scene.add(ambient)
-
-    const directional = new THREE.DirectionalLight(0xffffff, 0.8)
-    directional.position.set(10, 10, 5)
-    scene.add(directional)
-
-    // Camera
-    camera.position.set(15, 10, 15)
-    camera.lookAt(0, 0, 0)
-
-    // Simple floor
-    const floorGeometry = new THREE.PlaneGeometry(20, 20)
-    const floorMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      roughness: 0.8
-    })
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial)
-    floor.rotation.x = -Math.PI / 2
-    scene.add(floor)
-
-    // Create a simple room
-    const roomGeometry = new THREE.BoxGeometry(10, 8, 10)
-    const roomMaterial = new THREE.MeshStandardMaterial({
-      color: 0xe8f4f8,
-      transparent: true,
-      opacity: 0.1,
-      side: THREE.BackSide
-    })
-    const room = new THREE.Mesh(roomGeometry, roomMaterial)
-    scene.add(room)
-
-    // Add some basic furniture
-    const furniture = [
-      { type: 'bed', x: -4, z: -4, color: 0x8B4513 },
-      { type: 'sofa', x: 0, z: -4, color: 0x4169E1 },
-      { type: 'table', x: 0, z: 0, color: 0xD2691E }
-    ]
-
-    furniture.forEach(item => {
-      const geometry = new THREE.BoxGeometry(2, 1, 3)
-      const material = new THREE.MeshStandardMaterial({ color: item.color })
-      const mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(item.x, 0.5, item.z)
-      scene.add(mesh)
-    })
-
-    // Animation
-    const animate = () => {
-      requestAnimationFrame(animate)
-      renderer.render(scene, camera)
-    }
-    animate()
-
-    // Cleanup
-    return () => {
-      container.removeChild(renderer.domElement)
-      renderer.dispose()
-    }
-  }, [])
+  return (
+    <div ref={containerRef} className="tour-placeholder">
+      <h3>🏠 3D Virtual Tour</h3>
+      <p>Your 3D tour will appear here</p>
+      <div className="tour-demo">
+        <div className="room-demo">
+          <div className="floor"></div>
+          <div className="wall wall-1"></div>
+          <div className="wall wall-2"></div>
+          <div className="furniture bed"></div>
+          <div className="furniture sofa"></div>
+          <div className="furniture table"></div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function App() {
