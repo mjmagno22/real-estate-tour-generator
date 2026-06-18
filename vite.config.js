@@ -5,15 +5,8 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'es2020',
-    minify: 'esbuild',
+    minify: false,
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/three')) return 'three'
-        },
-      },
-    },
   },
   server: { host: true, port: 5173 },
 })
