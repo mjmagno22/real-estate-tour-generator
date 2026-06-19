@@ -1,163 +1,132 @@
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, FileImage, X } from 'lucide-react'
+import { Upload, FileImage, X, CheckCircle } from 'lucide-react'
+import { validateFile, createPreviewUrl, revokeObjectUrl, ACCEPTED_MIME_TYPES } from '../utils/validation'
 
-export function FileUpload({ onFileSelect, selectedFile, error }) {
-  const handleDrop = (e) => {
+export function FileUpload({ onFileSelect, selectedFile, onError, error }) {
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    if (selectedFile) {
+      const url = createPreviewUrl(selectedFile)
+      setPreviewUrl(url)
+      return () => revokeObjectUrl(url)
+    }
+    setPreviewUrl(null)
+  }, [selectedFile])
+
+  const handleValidation = useCallback((file) => {
+    const result = validateFile(file)
+    if (!result.valid) {
+      onError(result.error)
+      return false
+    }
+    return true
+  }, [onError])
+
+  const handleDrop = useCallback((e) => {
     e.preventDefault()
+    setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) {
-      validateAndSelectFile(files[0])
+    if (files.length > 0 && handleValidation(files[0])) {
+      onFileSelect(files[0])
+      onError(null)
     }
-  }
+  }, [onFileSelect, onError, handleValidation])
 
-  const handleDragOver = (e) => {
-    e.preventDefault()
-  }
+  const handleDragOver = useCallback((e) => e.preventDefault(), [])
+  const handleDragEnter = useCallback((e) => { e.preventDefault(); setIsDragging(true) }, [])
+  const handleDragLeave = useCallback((e) => { e.preventDefault(); setIsDragging(false) }, [])
 
-  const handleFileInput = (e) => {
+  const handleFileInput = useCallback((e) => {
     const file = e.target.files[0]
-    if (file) {
-      validateAndSelectFile(file)
+    if (file && handleValidation(file)) {
+      onFileSelect(file)
+      onError(null)
     }
-  }
+  }, [onFileSelect, onError, handleValidation])
 
-  const validateAndSelectFile = (file) => {
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    const maxSize = 10 * 1024 * 1024 // 10MB
+  const handleRemoveFile = useCallback(() => { onFileSelect(null); onError(null) }, [onFileSelect, onError])
 
-    if (!validTypes.includes(file.type)) {
-      error('Please upload a JPG, PNG, or WebP image')
-      return
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      document.getElementById('file-upload-input')?.click()
     }
-
-    if (file.size > maxSize) {
-      error('File size must be less than 10MB')
-      return
-    }
-
-    onFileSelect(file)
-  }
-
-  const removeFile = () => {
-    onFileSelect(null)
-  }
+  }, [])
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center"
-    >
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">
-        Upload Your Floor Plan
-      </h2>
-      <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Upload Your Floor Plan</h2>
+      <p className="text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto text-sm sm:text-base">
         Upload a floor plan image and we'll transform it into an immersive 3D virtual tour
         in seconds. Supports JPG, PNG, and WebP formats up to 10MB.
       </p>
 
-      {selectedFile ? (
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="bg-gray-50 border-2 border-dashed border-green-300 rounded-2xl p-6"
-        >
-          <div className="relative inline-block">
-            <img
-              src={URL.createObjectURL(selectedFile)}
-              alt="Floor plan preview"
-              className="max-w-md mx-auto rounded-xl shadow-lg"
-            />
-            <button
-              onClick={removeFile}
-              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors"
-            >
-              <X className="w-4 h-4" />
+      {selectedFile && previewUrl ? (
+        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          className="bg-gray-50 border-2 border-dashed border-green-300 rounded-2xl p-4 sm:p-6">
+          <div className="relative inline-block max-w-full">
+            <img src={previewUrl} alt="Floor plan preview"
+              className="max-w-full sm:max-w-md mx-auto rounded-xl shadow-lg h-auto max-h-64 sm:max-h-96 object-contain" />
+            <button onClick={handleRemoveFile}
+              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 sm:p-2 shadow-lg transition-colors"
+              aria-label="Remove file">
+              <X className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
-          <p className="text-green-600 font-medium mt-4">
-            ✓ {selectedFile.name} ready to process
-          </p>
+          <div className="flex items-center justify-center space-x-2 mt-4">
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            <p className="text-green-600 font-medium">{selectedFile.name} ready to process</p>
+          </div>
         </motion.div>
       ) : (
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          className="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-dashed border-blue-300 rounded-2xl p-12 cursor-pointer transition-all duration-300 hover:border-blue-400 hover:shadow-xl"
-        >
-          <Upload className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Drop your floor plan here
-          </h3>
-          <p className="text-gray-600 mb-4">
-            or click to browse files
-          </p>
-          <input
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp"
-            onChange={handleFileInput}
-            className="hidden"
-            id="file-upload"
-          />
-          <label
-            htmlFor="file-upload"
-            className="btn-primary inline-flex items-center space-x-2"
-          >
-            <FileImage className="w-5 h-5" />
+        <div role="button" tabIndex={0} aria-label="Upload floor plan image"
+          onDrop={handleDrop} onDragOver={handleDragOver} onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave} onKeyDown={handleKeyDown}
+          onClick={() => document.getElementById('file-upload-input')?.click()}
+          className={`bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-dashed rounded-2xl p-8 sm:p-12 cursor-pointer transition-all duration-300 ${isDragging ? 'border-blue-500 bg-blue-50 shadow-xl scale-[1.02]' : 'border-blue-300 hover:border-blue-400 hover:shadow-xl'}`}>
+          <Upload className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 transition-colors ${isDragging ? 'text-blue-600' : 'text-blue-500'}`} />
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{isDragging ? 'Drop your file here' : 'Drop your floor plan here'}</h3>
+          <p className="text-gray-600 mb-4 text-sm sm:text-base">or click to browse files</p>
+          <input type="file" id="file-upload-input" accept={ACCEPTED_MIME_TYPES}
+            onChange={handleFileInput} className="hidden" aria-hidden="true" />
+          <label htmlFor="file-upload-input"
+            className="btn-primary inline-flex items-center space-x-2 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}>
+            <FileImage className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>Select File</span>
           </label>
-          <p className="text-sm text-gray-500 mt-4">
-            Supported formats: JPG, PNG, WebP • Max size: 10MB
-          </p>
-        </motion.div>
+          <p className="text-xs sm:text-sm text-gray-500 mt-4">Supported formats: JPG, PNG, WebP • Max size: 10MB</p>
+        </div>
       )}
 
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl"
-        >
-          <p className="text-red-600 font-medium">{error}</p>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl" role="alert">
+          <p className="text-red-600 font-medium text-sm">{error}</p>
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto">
-        <motion.div
-          whileHover={{ y: -5 }}
-          className="bg-white p-6 rounded-xl shadow-md"
-        >
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-            <FileImage className="w-6 h-6 text-blue-600" />
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">AI-Powered</h4>
-          <p className="text-sm text-gray-600">Advanced AI converts your floor plan into interactive 3D space</p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ y: -5 }}
-          className="bg-white p-6 rounded-xl shadow-md"
-        >
-          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-            <CheckCircle className="w-6 h-6 text-green-600" />
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Instant Results</h4>
-          <p className="text-sm text-gray-600">Get your 3D tour ready in minutes, not hours</p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ y: -5 }}
-          className="bg-white p-6 rounded-xl shadow-md"
-        >
-          <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-            <span className="text-2xl">🏠</span>
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Professional</h4>
-          <p className="text-sm text-gray-600">Cinematic quality virtual tours that impress buyers</p>
-        </motion.div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12 max-w-4xl mx-auto">
+        <FeatureCard icon={<FileImage className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />}
+          title="AI-Powered" description="Advanced AI converts your floor plan into interactive 3D space" bgColor="bg-blue-100" />
+        <FeatureCard icon={<CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />}
+          title="Instant Results" description="Get your 3D tour ready in minutes, not hours" bgColor="bg-green-100" />
+        <FeatureCard icon={<span className="text-xl sm:text-2xl">🏠</span>}
+          title="Professional" description="Cinematic quality virtual tours that impress buyers" bgColor="bg-purple-100" />
       </div>
+    </motion.div>
+  )
+}
+
+function FeatureCard({ icon, title, description, bgColor }) {
+  return (
+    <motion.div whileHover={{ y: -5 }} className="bg-white p-4 sm:p-6 rounded-xl shadow-md text-left">
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} rounded-xl flex items-center justify-center mb-3 sm:mb-4`}>{icon}</div>
+      <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{title}</h4>
+      <p className="text-xs sm:text-sm text-gray-600">{description}</p>
     </motion.div>
   )
 }

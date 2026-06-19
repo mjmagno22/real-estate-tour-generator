@@ -5,11 +5,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'es2020',
-    minify: false,
     sourcemap: false,
   },
   server: { host: true, port: 5173 },
-  define: {
-    'process.env': {}
-  }
 })

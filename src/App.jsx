@@ -1,125 +1,148 @@
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useCallback } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Layout } from './components/Layout'
 import { FileUpload } from './components/FileUpload'
 import { TourPreview } from './components/TourPreview'
 import { Purchase } from './components/Purchase'
+import { analyzeFloorPlan, generateTourId } from './utils/roomAnalyzer'
+
+const STEP_VARIANTS = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -30 },
+}
 
 function App() {
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedFile, setSelectedFile] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [tourUrl, setTourUrl] = useState(null)
+  const [tourData, setTourData] = useState(null)
   const [error, setError] = useState(null)
+  const [layout, setLayout] = useState(null)
 
-  // Handle file upload
-  const handleFileSelect = (file) => {
-    if (file) {
-      setSelectedFile(file)
-      setError(null)
-    }
-  }
+  const handleFileSelect = useCallback((file) => {
+    setSelectedFile(file)
+    setError(null)
+  }, [])
 
-  // Handle tour generation
-  const handleGenerateTour = async () => {
+  const handleGenerateTour = useCallback(async () => {
     if (!selectedFile) {
       setError('Please select a floor plan first')
       return
     }
-
     setIsGenerating(true)
     setError(null)
+    try {
+      const roomLayout = await analyzeFloorPlan(selectedFile)
+      const tour = {
+        id: generateTourId(),
+        url: `${window.location.origin}/tour/${generateTourId()}`,
+        layout: roomLayout,
+        createdAt: new Date().toISOString(),
+      }
+      setLayout(roomLayout)
+      setTourData(tour)
+      setIsGenerating(false)
+      setCurrentStep(2)
+    } catch (err) {
+      setError(err.message || 'Failed to generate tour. Please try again.')
+      setIsGenerating(false)
+    }
+  }, [selectedFile])
 
-    // Simulate AI processing
-    await new Promise(resolve => setTimeout(resolve, 3000))
+  const handlePurchase = useCallback(() => {
+    const stripeUrl = import.meta.env.VITE_STRIPE_URL
+    if (stripeUrl) {
+      window.location.href = stripeUrl
+    } else {
+      window.location.href = '#checkout-demo'
+    }
+  }, [])
 
-    // Generate tour URL
-    const generatedUrl = `https://tourgen.app/tour/${Date.now()}`
-    setTourUrl(generatedUrl)
-    setIsGenerating(false)
-    setCurrentStep(3)
-  }
-
-  // Handle purchase
-  const handlePurchase = () => {
-    // Simulate payment processing
-    alert('Redirecting to secure checkout...')
-    // In production, this would open Stripe checkout
-    window.open('https://buy.stripe.com/test_123', '_blank')
-  }
-
-  // Reset and start over
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setCurrentStep(1)
     setSelectedFile(null)
-    setTourUrl(null)
+    setTourData(null)
+    setLayout(null)
     setError(null)
-  }
+  }, [])
 
   return (
     <Layout currentStep={currentStep}>
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl"
+        >
+          <p className="text-red-600 font-medium text-center">{error}</p>
+        </motion.div>
+      )}
+
       <AnimatePresence mode="wait">
         {currentStep === 1 && (
           <motion.div
             key="step1"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            variants={STEP_VARIANTS}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             transition={{ duration: 0.3 }}
           >
             <FileUpload
               onFileSelect={handleFileSelect}
               selectedFile={selectedFile}
+              onError={setError}
               error={error}
             />
-
-            <div className="mt-8 text-center">
-              {selectedFile && (
+            {selectedFile && (
+              <div className="mt-8 text-center">
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentStep(2)}
-                  className="btn-primary"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleGenerateTour}
+                  className="btn-primary text-lg px-10 py-4"
                 >
-                  Continue to 3D Generation
+                  Generate 3D Tour →
                 </motion.button>
-              )}
-            </div>
+              </div>
+            )}
           </motion.div>
         )}
 
         {currentStep === 2 && (
           <motion.div
             key="step2"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            variants={STEP_VARIANTS}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             transition={{ duration: 0.3 }}
           >
             <TourPreview
               file={selectedFile}
               isGenerating={isGenerating}
-              tourData={tourUrl}
+              tourData={tourData}
+              layout={layout}
+              onGenerate={handleGenerateTour}
             />
-
-            <div className="mt-8 flex justify-center space-x-4">
+            <div className="mt-6 flex justify-center space-x-4">
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={handleReset}
                 className="btn-secondary"
               >
-                Start Over
+                ← Start Over
               </motion.button>
-
-              {!isGenerating && !tourUrl && (
+              {tourData && (
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleGenerateTour}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setCurrentStep(3)}
                   className="btn-primary"
                 >
-                  Generate 3D Tour
+                  Continue to Purchase →
                 </motion.button>
               )}
             </div>
@@ -129,20 +152,21 @@ function App() {
         {currentStep === 3 && (
           <motion.div
             key="step3"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            variants={STEP_VARIANTS}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             transition={{ duration: 0.3 }}
           >
             <Purchase
-              tourUrl={tourUrl}
+              tourUrl={tourData?.url}
               onPurchase={handlePurchase}
+              onBack={() => setCurrentStep(2)}
             />
-
             <div className="mt-8 text-center">
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={handleReset}
                 className="btn-secondary"
               >
